@@ -1,4 +1,4 @@
-import { effect } from "../effect";
+import { effect, stop } from "../effect";
 import { reactive } from "../reactive";
 
 describe("effect", () => {
@@ -34,7 +34,7 @@ describe("effect", () => {
     /**
      * 1. effect 的第二个参数：{ scheduler: function }
      * 2. effect 第一次会执行第一个参数 fn
-     * 3. 当响应式数据更新时，不会执行第一个参数 fn，面是执行scheduler
+     * 3. 当响应式数据更新时，不会执行第一个参数 fn，面是执行 scheduler
      * 4. 当执行 runner 后，会再次执行第一个参数 fn
      */
     let dummy;
@@ -61,5 +61,46 @@ describe("effect", () => {
 
     run();
     expect(dummy).toBe(2);
+  });
+
+  it("stop", () => {
+    // 执行 stop 函数会清除之前的依赖收集，当响应数据更新时，不会触发依赖执行
+    let dummy;
+    const obj = reactive({ foo: 1 });
+    const runner = effect(() => {
+      dummy = obj.foo;
+    });
+    obj.foo = 2;
+    expect(dummy).toBe(2);
+    stop(runner);
+    obj.foo = 3;
+    expect(dummy).toBe(2);
+
+    runner();
+    expect(dummy).toBe(3);
+  });
+
+  it("onStop", () => {
+    /**
+     *  1. effect 的第二个参数：{ onStop: function }
+     *  2. 当执行 stop 函数时，onStop 函数会执行
+     *
+     */
+    const obj = reactive({
+      foo: 1,
+    });
+    const onStop = jest.fn();
+    let dummy;
+    const runner = effect(
+      () => {
+        dummy = obj.foo;
+      },
+      {
+        onStop,
+      }
+    );
+
+    stop(runner);
+    expect(onStop).toBeCalledTimes(1);
   });
 });
