@@ -1,8 +1,18 @@
 import { track, trigger } from "./effect";
+import { ReactiveFlags } from "./reactive";
 
 function getter(isReadonly = false) {
   return function get(target, key) {
     const result = Reflect.get(target, key);
+
+    if (key === ReactiveFlags.IS_REACTIVE) {
+      return !isReadonly;
+    }
+
+    if (key === ReactiveFlags.IS_READONLY) {
+      return isReadonly;
+    }
+
     if (!isReadonly) {
       // 收集依赖
       track(target, key);
