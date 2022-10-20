@@ -8,6 +8,8 @@ describe("readonly", () => {
     expect(observed.foo).toBe(1);
     expect(isReadonly(observed)).toBe(true);
     expect(isReadonly(original)).toBe(false);
+    expect(isReadonly(observed.bar)).toBe(true);
+    expect(isReadonly(original.bar)).toBe(false);
   });
 
   it("warn then call set", () => {
