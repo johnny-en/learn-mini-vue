@@ -1,5 +1,7 @@
 import { extend } from "../shared";
 
+let activeEffect;
+let shouldTrack = false;
 class ReactiveEffect {
   private _fn: any;
   public scheduler?: Function;
@@ -12,8 +14,19 @@ class ReactiveEffect {
   }
 
   run() {
+    // 执行 stop 后不在进行收集依赖
+    if (!this.active) {
+      return this._fn();
+    }
+
+    // 收集依赖
+    shouldTrack = true;
     activeEffect = this;
-    return this._fn();
+
+    const result = this._fn();
+    shouldTrack = false;
+
+    return result;
   }
 
   stop() {
@@ -29,10 +42,14 @@ class ReactiveEffect {
 
 function cleanUpEffect(effect) {
   effect.deps.forEach((dep: any) => dep.delete(effect));
+  effect.deps.length = 0;
 }
 
 const targetMap = new Map();
 export function track(target, key) {
+  if (!activeEffect) return;
+  if (!shouldTrack) return;
+
   let depsMap = targetMap.get(target);
   if (!depsMap) {
     depsMap = new Map();
@@ -45,7 +62,6 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
-  if (!activeEffect) return;
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
 }
@@ -62,7 +78,6 @@ export function trigger(target, key) {
   }
 }
 
-let activeEffect;
 export function effect(fn, options = {}) {
   const _effect = new ReactiveEffect(fn);
   extend(_effect, options);

@@ -70,14 +70,20 @@ describe("effect", () => {
     const runner = effect(() => {
       dummy = obj.foo;
     });
+
     obj.foo = 2;
     expect(dummy).toBe(2);
+
     stop(runner);
     obj.foo = 3;
     expect(dummy).toBe(2);
 
+    obj.foo++;
+    expect(obj.foo).toBe(4);
+    expect(dummy).toBe(2);
+
     runner();
-    expect(dummy).toBe(3);
+    expect(dummy).toBe(4);
   });
 
   it("onStop", () => {
