@@ -46,9 +46,11 @@ function cleanUpEffect(effect) {
 }
 
 const targetMap = new Map();
+function isTracking() {
+  return shouldTrack && activeEffect !== undefined;
+}
 export function track(target, key) {
-  if (!activeEffect) return;
-  if (!shouldTrack) return;
+  if (!isTracking()) return;
 
   let depsMap = targetMap.get(target);
   if (!depsMap) {
@@ -62,6 +64,7 @@ export function track(target, key) {
     depsMap.set(key, dep);
   }
 
+  if (dep.has(activeEffect)) return;
   dep.add(activeEffect);
   activeEffect.deps.push(dep);
 }
