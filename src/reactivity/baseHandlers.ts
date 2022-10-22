@@ -39,23 +39,28 @@ function setter() {
   };
 }
 
-const get = getter();
-const set = setter();
-export const mutableHandlers = {
-  get,
-  set,
-};
+export const mutableHandlers = createMutableHandlers();
+function createMutableHandlers() {
+  return {
+    get: getter(),
+    set: setter(),
+  };
+}
 
-const readonlyGet = getter(true);
-export const readonlyHandlers = {
-  get: readonlyGet,
-  set(target, key, value) {
-    console.warn(`The ${key} set on failed, target is readonly`);
-    return true;
-  },
-};
+export const readonlyHandlers = createReadonlyHandlers();
+function createReadonlyHandlers() {
+  return {
+    get: getter(true),
+    set(target, key, value) {
+      console.warn(`The ${key} set on failed, target is readonly`);
+      return true;
+    },
+  };
+}
 
-const shallowReadonlyGet = getter(true, true);
-export const shallowReadonlyHandlers = extend({}, readonlyHandlers, {
-  get: shallowReadonlyGet,
-});
+export const shallowReadonlyHandlers = createShallowReadonlyHandlers();
+function createShallowReadonlyHandlers() {
+  return extend({}, readonlyHandlers, {
+    get: getter(true, true),
+  });
+}
