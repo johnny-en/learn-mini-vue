@@ -7,15 +7,16 @@ import {
   targetMap,
 } from "./effect_variable";
 
-class ReactiveEffect {
+export class ReactiveEffect {
   private _fn: any;
   public scheduler?: Function;
   public onStop?: Function;
   deps = [];
   active = true;
 
-  constructor(fn) {
+  constructor(fn, scheduler) {
     this._fn = fn;
+    this.scheduler = scheduler;
   }
 
   run() {
@@ -93,8 +94,8 @@ export function triggerEffect(dep) {
   }
 }
 
-export function effect(fn, options = {}) {
-  const _effect = new ReactiveEffect(fn);
+export function effect(fn, options: any = {}) {
+  const _effect = new ReactiveEffect(fn, options.scheduler);
   extend(_effect, options);
   _effect.run();
   const runner: any = _effect.run.bind(_effect);
