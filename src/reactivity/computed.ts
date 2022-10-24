@@ -1,4 +1,3 @@
-import { extend } from "../shared";
 import { ReactiveEffect } from "./effect";
 
 class ComputedRefImpl {
