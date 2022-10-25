@@ -12,5 +12,5 @@ export default {
       file: "lib/mini-vue.esm.js",
     },
   ],
-  plugin: [typescript()],
+  plugins: [typescript()],
 };
