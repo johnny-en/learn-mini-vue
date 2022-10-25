@@ -1,3 +1,6 @@
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 import typescript from "@rollup/plugin-typescript";
 
 export default {
@@ -5,11 +8,11 @@ export default {
   output: [
     {
       format: "cjs",
-      file: "lib/mini-vue.cjs.js",
+      file: pkg.main,
     },
     {
       format: "es",
-      file: "lib/mini-vue.esm.js",
+      file:pkg.module,
     },
   ],
   plugins: [typescript()],
