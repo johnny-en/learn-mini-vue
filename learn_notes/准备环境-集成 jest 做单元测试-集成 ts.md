@@ -6,7 +6,6 @@ yarn init -y
 ```
 
 ### 安装 `TypeSciprt`
-全局安装过 `TypeSciprt` 可以跳过这步
 
 ```bash
 yarn add typescript --dev
