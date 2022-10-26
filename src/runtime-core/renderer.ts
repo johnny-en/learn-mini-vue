@@ -22,7 +22,7 @@ function processElement(vnode: any, container: any) {
 }
 
 function mountElement(vnode: any, container: any) {
-  const el = document.createElement(vnode.type);
+  const el = (vnode.el = document.createElement(vnode.type));
 
   // 处理 children: string | array
   const { children } = vnode;
@@ -53,14 +53,17 @@ function processComponent(vnode: any, container: any) {
   mountComponent(vnode, container);
 }
 
-function mountComponent(vnode: any, container: any) {
-  const instance = createComponentInstance(vnode);
+function mountComponent(initialVNode: any, container: any) {
+  const instance = createComponentInstance(initialVNode);
   setupComponent(instance);
-  setupRenderEffect(instance, container);
+  setupRenderEffect(instance, initialVNode, container);
 }
 
-function setupRenderEffect(instance: any, container: any) {
+function setupRenderEffect(instance: any, initialVNode, container: any) {
   const subTree = instance.render.call(instance.proxy);
 
   patch(subTree, container);
+
+  // 当前根元素虚拟节点 el -> 当前组件虚拟节点 el 上
+  initialVNode.el = subTree.el;
 }
