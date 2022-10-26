@@ -9,8 +9,8 @@ export const App = {
         id: "root",
         class: ["skyblue", "root"],
       },
-      [h("p", { class: "skyblue" }, "hello"), h("p", null, "mini vue")]
-      // `hello ${this.msg}`
+      `hello ${this.msg}`
+      // [h("p", { class: "skyblue" }, "hello"), h("p", null, "mini vue")]
     );
   },
   setup() {

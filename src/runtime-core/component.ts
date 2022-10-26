@@ -2,6 +2,7 @@ export function createComponentInstance(vnode) {
   const component = {
     vnode,
     type: vnode.type,
+    setupState: {},
   };
   return component;
 }
@@ -14,6 +15,23 @@ export function setupComponent(instance) {
 }
 
 function setupStatefulComponent(instance) {
+  /**
+   * 创建代理对象
+   * 调用 render 时 call 创建的代理对象，作用域指向这个代理对象
+   * 在 render 中，使用 this.xxx 获取 setup 返回的数据对象
+   */
+  instance.proxy = new Proxy(
+    {},
+    {
+      get(target, key) {
+        const { setupState } = instance;
+        if (key in setupState) {
+          return setupState[key];
+        }
+      },
+    }
+  );
+
   const Component = instance.type;
 
   const { setup } = Component;
@@ -27,12 +45,12 @@ function setupStatefulComponent(instance) {
 
 function handleSetupResult(instance, setupResult: any) {
   /**
-   * return: function | object
+   * setupResult: function | object
    * function -> component render
    * object -> inject component
    * */
   if (typeof setupResult === "object") {
-    instance.setupResult = setupResult;
+    instance.setupState = setupResult;
   }
 
   finishComponentSetup(instance);
