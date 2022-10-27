@@ -52,7 +52,7 @@ function createReadonlyHandlers() {
   return {
     get: getter(true),
     set(target, key, value) {
-      console.warn(`The ${key} set on failed, target is readonly`);
+      console.warn(`The [${key}] set on failed, target is an readonly`);
       return true;
     },
   };

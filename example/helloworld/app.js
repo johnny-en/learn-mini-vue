@@ -1,4 +1,5 @@
 import { h } from "../../lib/mini-vue.esm.js";
+import { Foo } from "./foo.js";
 
 export const App = {
   // template
@@ -16,8 +17,8 @@ export const App = {
           console.log("mouseup");
         },
       },
-      `hello ${this.msg}`
-      // [h("p", { class: "skyblue" }, "hello"), h("p", null, "mini vue")]
+      [h(Foo, { count: 1 })]
+      // `hello ${this.msg}`
     );
   },
   setup() {

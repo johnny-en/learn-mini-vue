@@ -6,4 +6,7 @@ export const hasChange = (value, newValue) => {
   return !Object.is(value, newValue);
 };
 
-export const isOn = (value: string) => /^on[A-Z]/.test(value);
+export const isOn = (value) => /^on[A-Z]/.test(value);
+
+export const hasOwn = (target, key) =>
+  Object.prototype.hasOwnProperty.call(target, key);

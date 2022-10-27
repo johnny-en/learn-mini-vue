@@ -1,8 +1,10 @@
+import { isObject } from "../shared/index";
 import {
   mutableHandlers,
   readonlyHandlers,
   shallowReadonlyHandlers,
 } from "./baseHandlers";
+import { targetMap } from "./effect_variable";
 
 export const enum ReactiveFlags {
   IS_REACTIVE = "__v_isReactive",
@@ -33,6 +35,10 @@ export function isProxy(value) {
   return isReactive(value) || isReadonly(value);
 }
 
-function creatActiveObject(raw: any, baseHandlers) {
-  return new Proxy(raw, baseHandlers);
+function creatActiveObject(target: any, baseHandlers) {
+  if (!isObject(target)) {
+    console.warn(`target: ${target} must be an object`);
+    return target;
+  }
+  return new Proxy(target, baseHandlers);
 }
