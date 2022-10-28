@@ -1,20 +1,23 @@
 import { h } from "../../lib/mini-vue.esm.js";
-import { Foo } from "./foo.js";
 
 export const App = {
   // template
   render() {
     window.self = this;
-    return h("div", {}, [
-      h(Foo, {
-        onAdd(a, b) {
-          console.log("emit onAdd", a, b);
+    return h(
+      "div",
+      {
+        id: "root",
+        class: ["skyblue", "root"],
+        onClick(e) {
+          console.log("click", e);
         },
-        onAddFoo() {
-          console.log("emit onAddFoo");
+        onMouseup() {
+          console.log("mouseup");
         },
-      }),
-    ]);
+      },
+      `hello ${this.msg}`
+    );
   },
   setup() {
     const msg = "mini-vue";
