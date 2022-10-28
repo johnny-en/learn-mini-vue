@@ -5,21 +5,25 @@ export const App = {
   // template
   render() {
     window.self = this;
-    return h("div", {}, [
-      h(Foo, {
-        onAdd(a, b) {
-          console.log("emit onAdd", a, b);
-        },
-        onAddFoo() {
-          console.log("emit onAddFoo");
-        },
-      }),
-    ]);
+    const app = h("div", {}, "app");
+
+    // 具名 & 作用域 slots
+    const foo = h(
+      Foo,
+      {},
+      {
+        header: ({ title }) => h("div", null, "header " + title),
+        footer: () => [h("div", null, "footer1"), h("div", null, "footer2")],
+      }
+    );
+
+    return h(
+      "div",
+      {
+        id: "root",
+      },
+      [app, foo]
+    );
   },
-  setup() {
-    const msg = "mini-vue";
-    return {
-      msg,
-    };
-  },
+  setup() {},
 };

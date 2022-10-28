@@ -1,23 +1,16 @@
-import { h } from "../../lib/mini-vue.esm.js";
+import { h, renderSlots } from "../../lib/mini-vue.esm.js";
 
 export const Foo = {
   render() {
-    return h(
-      "button",
-      {
-        onClick: this.add,
-      },
-      "add"
-    );
+    const foo = h("p", {}, "foo");
+    const title = "vue";
+    return h("div", {}, [
+      renderSlots(this.$slots, "header", {
+        title,
+      }),
+      foo,
+      renderSlots(this.$slots, "footer"),
+    ]);
   },
-  setup(props, { emit }) {
-    const add = () => {
-      console.log("emit add");
-      emit("add", 1, 2);
-      emit("add-foo");
-    };
-    return {
-      add,
-    };
-  },
+  setup() {},
 };

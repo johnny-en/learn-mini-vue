@@ -8,7 +8,10 @@ export function createVNode(type, props?, children?) {
     el: null,
     shapeFlag: shapeFlag(type),
   };
+
   setChildrenShapeFlag(vnode);
+  setSlotsShapeFlag(vnode);
+
   return vnode;
 }
 
@@ -31,5 +34,18 @@ function setChildrenShapeFlag(vnode) {
     vnode.shapeFlag |= ShapeFlags.TEXT_CHILDREN;
   } else if (Array.isArray(children)) {
     vnode.shapeFlag |= ShapeFlags.ARRAY_CHILDREN;
+  }
+}
+
+/**
+ * 设置 vnode slot 类型
+ * 当 vnode 类型是组件 & 子节点是对象类型
+ * 0001 | 10000 -> 10001
+ */
+function setSlotsShapeFlag(vnode) {
+  if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+    if (typeof vnode.children === "object") {
+      vnode.shapeFlag |= ShapeFlags.SLOT_CHILDREN;
+    }
   }
 }
