@@ -2,15 +2,22 @@ import { h } from "../../lib/mini-vue.esm.js";
 
 export const Foo = {
   render() {
-    // 获取 props.count
-    return h("div", {}, `foo: ${this.count}`);
+    return h(
+      "button",
+      {
+        onClick: this.add,
+      },
+      "add"
+    );
   },
-  setup(props) {
-    // props.count
-    console.log(props);
-
-    // props is an shallowReadonly
-    props.count++;
-    console.log(props);
+  setup(props, { emit }) {
+    const add = () => {
+      console.log("emit add");
+      emit("add", 1, 2);
+      emit("add-foo");
+    };
+    return {
+      add,
+    };
   },
 };

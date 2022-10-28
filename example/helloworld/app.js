@@ -5,21 +5,16 @@ export const App = {
   // template
   render() {
     window.self = this;
-    return h(
-      "div",
-      {
-        id: "root",
-        class: ["skyblue", "root"],
-        onClick(e) {
-          console.log("click", e);
+    return h("div", {}, [
+      h(Foo, {
+        onAdd(a, b) {
+          console.log("emit onAdd", a, b);
         },
-        onMouseup() {
-          console.log("mouseup");
+        onAddFoo() {
+          console.log("emit onAddFoo");
         },
-      },
-      [h(Foo, { count: 1 })]
-      // `hello ${this.msg}`
-    );
+      }),
+    ]);
   },
   setup() {
     const msg = "mini-vue";
