@@ -5,7 +5,7 @@ import {
   shouldTrack,
   setShouldTrack,
   targetMap,
-} from "./effect_variable";
+} from "./variable/effect";
 
 export class ReactiveEffect {
   private _fn: any;

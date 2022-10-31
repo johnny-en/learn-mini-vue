@@ -4,7 +4,7 @@ import {
   readonlyHandlers,
   shallowReadonlyHandlers,
 } from "./baseHandlers";
-import { targetMap } from "./effect_variable";
+import { targetMap } from "./variable/effect";
 
 export const enum ReactiveFlags {
   IS_REACTIVE = "__v_isReactive",
