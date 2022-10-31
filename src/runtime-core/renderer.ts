@@ -1,6 +1,7 @@
-import { isObject, isOn } from "../shared/index";
+import { isOn } from "../shared/index";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { Fragment, Text } from "./vnode";
 
 export function render(vnode, container) {
   // 调用 patch 方法
@@ -9,13 +10,33 @@ export function render(vnode, container) {
 }
 
 function patch(vnode: any, container: any) {
-  if (vnode.shapeFlag & ShapeFlags.ELEMENT) {
-    // if vnode -> element -> 处理 element
-    processElement(vnode, container);
-  } else if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
-    // if vnode -> 组件 -> 处理组件
-    processComponent(vnode, container);
+  switch (vnode.type) {
+    case Fragment:
+      processFragment(vnode, container);
+      break;
+    case Text:
+      processText(vnode, container);
+      break;
+    default:
+      if (vnode.shapeFlag & ShapeFlags.ELEMENT) {
+        // if vnode -> element -> 处理 element
+        processElement(vnode, container);
+      } else if (vnode.shapeFlag & ShapeFlags.STATEFUL_COMPONENT) {
+        // if vnode -> 组件 -> 处理组件
+        processComponent(vnode, container);
+      }
+      break;
   }
+}
+
+function processText(vnode: any, container: any) {
+  const { children } = vnode;
+  const textNode = document.createTextNode(children);
+  container.append(textNode);
+}
+
+function processFragment(vnode: any, container: any) {
+  mountChildren(vnode, container);
 }
 
 function processElement(vnode: any, container: any) {
@@ -30,7 +51,7 @@ function mountElement(vnode: any, container: any) {
   if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
     el.textContent = children;
   } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-    mountChildren(children, el);
+    mountChildren(vnode, el);
   }
 
   // 处理 props
@@ -48,8 +69,8 @@ function mountElement(vnode: any, container: any) {
   container.append(el);
 }
 
-function mountChildren(children: any[], container: any) {
-  children.forEach((vnode) => {
+function mountChildren(vnode: any, container: any) {
+  vnode.children.forEach((vnode) => {
     patch(vnode, container);
   });
 }
