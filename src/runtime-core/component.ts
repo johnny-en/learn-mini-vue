@@ -3,6 +3,7 @@ import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { publicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
+import { currentInstance, setCurrentInstance } from "./variable/component";
 
 export function createComponentInstance(vnode) {
   const component = {
@@ -36,10 +37,12 @@ function setupStatefulComponent(instance) {
   const { setup } = Component;
 
   if (setup) {
+    setCurrentInstance(instance);
     // 只是首层 props 只读不可修改
     const setupResult = setup(shallowReadonly(instance.props), {
       emit: instance.emit,
     });
+    setCurrentInstance(null);
 
     handleSetupResult(instance, setupResult);
   }
@@ -64,4 +67,8 @@ function finishComponentSetup(instance: any) {
   if (Component.render) {
     instance.render = Component.render;
   }
+}
+
+export function getCurrentInstance() {
+  return currentInstance();
 }
