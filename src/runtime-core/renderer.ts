@@ -10,7 +10,9 @@ export function createRenderer(options) {
   const {
     createElement: hostCreateElement,
     patchProp: hostPatchProp,
-    insert: HostInsert,
+    insert: hostInsert,
+    remove: hostRemove,
+    setElementText: hostSetElementText,
   } = options;
 
   function render(vnode, container) {
@@ -53,31 +55,65 @@ export function createRenderer(options) {
   }
 
   function processFragment(n1, n2: any, container: any, parentComponent) {
-    mountChildren(n2, container, parentComponent);
+    mountChildren(n2.children, container, parentComponent);
   }
 
   function processElement(n1, n2: any, container: any, parentComponent) {
     if (!n1) {
       mountElement(n2, container, parentComponent);
     } else {
-      patchElement(n1, n2, container);
+      patchElement(n1, n2, container, parentComponent);
     }
   }
 
-  function patchElement(n1, n2, contaniner) {
+  function patchElement(n1, n2, contaniner, parentComponent) {
     console.log("patchElement");
     console.log("n1", n1);
     console.log("n2", n2);
 
     const oldProps = n1.props || EMPTY_OBJ;
     const newProps = n2.props || EMPTY_OBJ;
+
     /**
      * 挂载 el 是在创建元素 mountElement 阶段赋值的
      * 在 setupRenderEffect 进入更新阶段时，新的 vnode.el 还未有赋值
      * 所以在这给 新的 vnode.el 赋值
      * */
     const el = (n2.el = n1.el);
+
+    patchChildren(n1, n2, el, parentComponent);
     patchPorps(el, oldProps, newProps);
+  }
+
+  function patchChildren(n1: any, n2: any, container, parentComponent) {
+    const { shapeFlag: prevShapeFlag, children: c1 } = n1;
+    const { shapeFlag, children: c2 } = n2;
+
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      // 新节点是文本，旧节点是数组
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        // 删除旧的 children
+        unmountChildren(c1);
+      }
+      // 旧节点是数组 | 旧节点的文本 !== 新节点的文本
+      if (c1 !== c2) {
+        // 更新 children -> text
+        hostSetElementText(container, c2);
+      }
+    } else {
+      // 新节点是数组，旧节点是文本
+      if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+        hostSetElementText(container, "");
+        mountChildren(c2, container, parentComponent);
+      }
+    }
+  }
+
+  function unmountChildren(children) {
+    for (let i = 0; i < children.length; i++) {
+      const el = children[i].el;
+      hostRemove(el);
+    }
   }
 
   function patchPorps(el, oldProps: any, newProps: any) {
@@ -114,7 +150,7 @@ export function createRenderer(options) {
     if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
       el.textContent = children;
     } else if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
-      mountChildren(vnode, el, parentComponent);
+      mountChildren(vnode.children, el, parentComponent);
     }
 
     // 处理 props
@@ -124,11 +160,11 @@ export function createRenderer(options) {
       hostPatchProp(el, key, null, value);
     }
 
-    HostInsert(el, container);
+    hostInsert(el, container);
   }
 
-  function mountChildren(vnode: any, container: any, parentComponent) {
-    vnode.children.forEach((vnode) => {
+  function mountChildren(children: any, container: any, parentComponent) {
+    children.forEach((vnode) => {
       patch(null, vnode, container, parentComponent);
     });
   }
