@@ -7,7 +7,7 @@ export default {
   name: "TextToArray",
   setup() {
     const isChange = ref(false);
-    window.textToArrayChange = isChange;
+    window.isChange = isChange;
     return {
       isChange,
     };

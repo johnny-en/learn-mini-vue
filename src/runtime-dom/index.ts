@@ -18,14 +18,14 @@ function patchProp(el, key, prevValue, nextValue) {
   }
 }
 
-function insert(el, parent) {
-  parent.append(el);
+function insert(child, parent, anchor = null) {
+  parent.insertBefore(child, anchor);
 }
 
-function remove(children) {
-  const parent = children.parentNode;
+function remove(child) {
+  const parent = child.parentNode;
   if (parent) {
-    parent.removeChild(children);
+    parent.removeChild(child);
   }
 }
 

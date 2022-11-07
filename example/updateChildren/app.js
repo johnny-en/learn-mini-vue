@@ -3,7 +3,7 @@ import { h } from "../../lib/mini-vue.esm.js";
 import ArrayToText from "./ArrayToText.js";
 import TextToText from "./TextToText.js";
 import TextToArray from "./TextToArray.js";
-// import ArrayToArray from "./ArrayToArray.js";
+import ArrayToArray from "./ArrayToArray.js";
 
 export const App = {
   name: "App",
@@ -16,13 +16,13 @@ export const App = {
       [
         h("p", null, "主页"),
         // 老的是 array 新的是 text
-        h(ArrayToText),
+        // h(ArrayToText),
         // 老的是 text 新的是 text
-        h(TextToText),
+        // h(TextToText),
         // 老的是 text 新的是 array
-        h(TextToArray),
+        // h(TextToArray),
         // 老的是 array 新的是 array
-        // h(ArrayToArray),
+        h(ArrayToArray),
       ]
     );
   },

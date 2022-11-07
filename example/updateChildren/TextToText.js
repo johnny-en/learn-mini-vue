@@ -7,7 +7,7 @@ export default {
   name: "TextToText",
   setup() {
     const isChange = ref(false);
-    window.textToText = isChange;
+    window.isChange = isChange;
     return {
       isChange,
     };

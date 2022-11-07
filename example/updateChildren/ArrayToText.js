@@ -7,7 +7,7 @@ export default {
   name: "ArrayToText",
   setup() {
     const isChange = ref(false);
-    window.arrayToTextChange = isChange;
+    window.isChange = isChange;
     return {
       isChange,
     };
