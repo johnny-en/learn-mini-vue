@@ -191,12 +191,29 @@ export function createRenderer(options) {
        * s1，s2: 中间区间的起始位置
        * patched：已经处理新节点的数量
        * toBePatched: 记录新节点需要处理的数量
+       * moved: 新的节点移动的开关
+       * maxNewIndexSoFar: 记录新的节点序列的最后一个节点的索引
+       *                   当遍历的新节点小于记录的索引时，需要移动节点
+       *                   因为索引递增是稳定的节点，不稳定的需要移动
+       * ---------------
+       * a b (c d e) f g
+       *     [3 4 5]
+       * a b (e c d) f g
+       *     [5 3 4]
+       * ---------------
        **/
       let s1 = i;
       let s2 = i;
       let patched = 0;
+      let moved = false;
+      let maxNewIndexSoFar = 0;
       const toBePatched = e2 - s2 + 1;
       const keyToNewIndexMap = new Map();
+      const newIndexToOldIndexMap = new Array(toBePatched);
+      // 初始化为 0 , 新值在老的里面不存在
+      for (let i = 0; i < toBePatched; i++) {
+        newIndexToOldIndexMap[i] = 0;
+      }
 
       for (let i = s2; i <= e2; i++) {
         const nextChild = c2[i];
@@ -228,8 +245,75 @@ export function createRenderer(options) {
         if (newIndex === undefined) {
           hostRemove(prevChild.el);
         } else {
+          // 优化
+          if (newIndex >= maxNewIndexSoFar) {
+            maxNewIndexSoFar = newIndex;
+          } else {
+            moved = true;
+          }
+          /**
+           * 设置新节点在老节点中的映射序列
+           * ---------------
+           * a b (c d e) f g
+           *     [3 4 5]
+           * a b (e c d) f g
+           *     [5 3 4]
+           * ---------------
+           * i + 1 是因为 i 有可能是 0
+           */
+          newIndexToOldIndexMap[newIndex - s2] = i + 1;
           patch(prevChild, c2[newIndex], container, parentComponent, null);
           patched++;
+        }
+      }
+
+      /**
+       * 处理移动
+       * 执行最长递增子序列函数，获取稳定的节点序列
+       * 通过 moved 进行优化，对需要移动的节点，执行 LIS 算法
+       */
+      const increasingNewIndexSequence = moved
+        ? IndexOfLIS(newIndexToOldIndexMap)
+        : [];
+      let j = increasingNewIndexSequence.length - 1;
+
+      /**
+       * 用新节点中的稳定的节点序列与老的节点序列比较，移动不稳定的节点
+       * 这里使用倒序来处理
+       * 因为插入节点使用的是 insertBefore 要在稳定的节点前插入
+       * 有稳定的元素 -> 插入到稳定元素之前
+       * 无稳定的元素 -> 插入到父节点的子节点列表的末尾
+       * -----------------------------
+       *      a b | (c d e) | f g
+       *            [0,1,2]
+       *      a b | (e d c) | f g
+       *            [2,1,0]
+       * 稳定的节点 |        | 稳定的节点
+       * [0] 最长递增子序列 -> [2,1] 需要移动
+       * -----------------------------
+       *      a b | (c d e)
+       *            [0,1,2]
+       *      a b | (e c d)
+       *            [2,0,1]
+       * [0,1] 最长递增子序列 -> [2] 需要移动
+       * 稳定的节点 |
+       * -----------------------------
+       */
+      for (let i = toBePatched - 1; i >= 0; i--) {
+        const nextIndex = i + s2;
+        const nextChild = c2[nextIndex];
+        const anchor = nextIndex + 1 < l2 ? c2[nextIndex + 1].el : null;
+        if (newIndexToOldIndexMap[i] === 0) {
+          // 创建节点
+          // 老节点不存在，新节点存在
+          patch(null, nextChild, container, parentComponent, anchor);
+        } else if (moved) {
+          if (j < 0 || i !== increasingNewIndexSequence[j]) {
+            console.log("移动位置");
+            hostInsert(nextChild.el, container, anchor);
+          } else {
+            j--;
+          }
         }
       }
     }
@@ -356,4 +440,47 @@ export function createRenderer(options) {
   return {
     createApp: createAppAPI(render),
   };
+}
+
+/**
+ * 最长递增子序列(Longest Increasing Subsequence)
+ * [10,9,2,5,3,7] -> [2,3,7] 最长递增序列 -> [2,4,5] 最长递增序列的下标
+ * 时间复杂度：O(nlog(n))
+ * @param nums: number[]
+ * @returns: number[] 最长递增子序列的下标
+ */
+function IndexOfLIS(nums) {
+  let n = nums.length;
+  if (n === 0) return [];
+  let arr: number[] = [];
+  arr[0] = 0;
+  for (let i = 1; i < n; i++) {
+    /**
+     * 值为 0 表示不需要移动的节点
+     * 因为该节点在老的里没有，新的里面存在，需要新增的节点
+     * */
+    if (nums[i] === 0) {
+      continue;
+    }
+    if (nums[arr[i - 1]] < nums[i]) {
+      arr.push(i);
+    } else {
+      let l = 0;
+      let r = arr.length - 1;
+      let flag = -1;
+      while (l <= r) {
+        let mid = (l + r) >> 1;
+        if (nums[arr[mid]] < nums[i]) {
+          flag = mid;
+          l = mid + 1;
+        } else {
+          r = mid - 1;
+        }
+      }
+      if (nums[arr[flag + 1]] !== nums[i]) {
+        arr[flag + 1] = i;
+      }
+    }
+  }
+  return arr;
 }
