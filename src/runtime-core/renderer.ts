@@ -2,6 +2,7 @@ import { effect } from "../reactivity/effect";
 import { EMPTY_OBJ } from "../shared";
 import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
+import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { createAppAPI } from "./createApp";
 import { Fragment, Text } from "./vnode";
 
@@ -391,11 +392,32 @@ export function createRenderer(options) {
     parentComponent,
     anchor
   ) {
-    mountComponent(n2, container, parentComponent, anchor);
+    if (!n1) {
+      mountComponent(n2, container, parentComponent, anchor);
+    } else {
+      updateComponent(n1, n2);
+    }
+  }
+
+  function updateComponent(n1, n2) {
+    // 更新组件实现
+    const instance = (n2.component = n1.component);
+    // prop 的值更新时，更新组件
+    if (shouldUpdateComponent(n1, n2)) {
+      instance.next = n2;
+      instance.update();
+    } else {
+      n2.el = n1.el;
+      instance.vnode = n2;
+    }
   }
 
   function mountComponent(vnode: any, container: any, parentComponent, anchor) {
-    const instance = createComponentInstance(vnode, parentComponent);
+    // 保存组件实例
+    const instance = (vnode.component = createComponentInstance(
+      vnode,
+      parentComponent
+    ));
     setupComponent(instance);
     setupRenderEffect(instance, vnode, container, anchor);
   }
@@ -411,7 +433,7 @@ export function createRenderer(options) {
      * 因组件 render 函数中的响应对象的 get 操作被触发时，会触发依赖收集
      * 响应对象数据更新时，会触发收集的依赖
      */
-    effect(() => {
+    instance.update = effect(() => {
       if (!instance.isMounted) {
         // 组件初始化
         const subTree = (instance.subTree = instance.render.call(
@@ -428,6 +450,12 @@ export function createRenderer(options) {
       } else {
         // 组件更新
         console.log("update");
+        const { next, vnode } = instance;
+        if (next) {
+          next.el = vnode.el;
+
+          updateComponentPreRender(instance, next);
+        }
         const subTree = instance.render.call(instance.proxy);
         const prevSubTree = instance.subTree;
         instance.subTree = subTree;
@@ -440,6 +468,12 @@ export function createRenderer(options) {
   return {
     createApp: createAppAPI(render),
   };
+}
+
+function updateComponentPreRender(instance, nextVNode) {
+  instance.vnode = nextVNode;
+  instance.next = null;
+  instance.props = nextVNode.props;
 }
 
 /**

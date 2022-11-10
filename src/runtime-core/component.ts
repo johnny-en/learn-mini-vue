@@ -17,6 +17,7 @@ export function createComponentInstance(vnode, parent) {
     parent,
     isMounted: false,
     subTree: {},
+    next: null, // 下次要更新的 vnode
     emit: () => {},
   };
   component.emit = emit.bind(null, component) as any;
