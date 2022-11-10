@@ -4,6 +4,7 @@ import { ShapeFlags } from "../shared/ShapeFlags";
 import { createComponentInstance, setupComponent } from "./component";
 import { shouldUpdateComponent } from "./componentUpdateUtils";
 import { createAppAPI } from "./createApp";
+import { queueJobs } from "./scheduler";
 import { Fragment, Text } from "./vnode";
 
 export function createRenderer(options) {
@@ -81,8 +82,8 @@ export function createRenderer(options) {
 
   function patchElement(n1, n2, contaniner, parentComponent, anchor) {
     console.log("patchElement");
-    console.log("n1", n1);
-    console.log("n2", n2);
+    // console.log("n1", n1);
+    // console.log("n2", n2);
 
     const oldProps = n1.props || EMPTY_OBJ;
     const newProps = n2.props || EMPTY_OBJ;
@@ -433,36 +434,49 @@ export function createRenderer(options) {
      * 因组件 render 函数中的响应对象的 get 操作被触发时，会触发依赖收集
      * 响应对象数据更新时，会触发收集的依赖
      */
-    instance.update = effect(() => {
-      if (!instance.isMounted) {
-        // 组件初始化
-        const subTree = (instance.subTree = instance.render.call(
-          instance.proxy
-        ));
-        console.log("init", subTree);
+    instance.update = effect(
+      () => {
+        if (!instance.isMounted) {
+          // 组件初始化
+          const subTree = (instance.subTree = instance.render.call(
+            instance.proxy
+          ));
+          console.log("init", subTree);
 
-        patch(null, subTree, container, instance, anchor);
+          patch(null, subTree, container, instance, anchor);
 
-        // 当前根元素虚拟节点 el -> 当前组件虚拟节点 el 上
-        initialVNode.el = subTree.el;
+          // 当前根元素虚拟节点 el -> 当前组件虚拟节点 el 上
+          initialVNode.el = subTree.el;
 
-        instance.isMounted = true;
-      } else {
-        // 组件更新
-        console.log("update");
-        const { next, vnode } = instance;
-        if (next) {
-          next.el = vnode.el;
+          instance.isMounted = true;
+        } else {
+          // 组件更新
+          console.log("update component");
+          const { next, vnode } = instance;
+          if (next) {
+            next.el = vnode.el;
 
-          updateComponentPreRender(instance, next);
+            updateComponentPreRender(instance, next);
+          }
+          const subTree = instance.render.call(instance.proxy);
+          const prevSubTree = instance.subTree;
+          instance.subTree = subTree;
+
+          patch(prevSubTree, subTree, container, instance, anchor);
         }
-        const subTree = instance.render.call(instance.proxy);
-        const prevSubTree = instance.subTree;
-        instance.subTree = subTree;
-
-        patch(prevSubTree, subTree, container, instance, anchor);
+      },
+      {
+        scheduler() {
+          /**
+           * 异步更新视图
+           * 创建 Promise 将 effect 返回的 runner 函数添加到微任务中
+           * 同步任务执行完，执行微任务
+           */
+          console.log("update scheduler");
+          queueJobs(instance.update);
+        },
       }
-    });
+    );
   }
 
   return {
