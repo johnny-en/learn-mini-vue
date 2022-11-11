@@ -14,7 +14,7 @@ export class ReactiveEffect {
   deps = [];
   active = true;
 
-  constructor(fn, scheduler) {
+  constructor(fn, scheduler?) {
     this._fn = fn;
     this.scheduler = scheduler;
   }
@@ -80,6 +80,7 @@ export function trackEffects(dep) {
 
 export function trigger(target, key) {
   const depsMap = targetMap().get(target);
+  if (!depsMap) return;
   const dep = depsMap.get(key);
   triggerEffect(dep);
 }
