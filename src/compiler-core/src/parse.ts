@@ -23,25 +23,50 @@ function parseChildren(context): any {
       node = parseElement(context);
     }
   }
+
+  if (!node) {
+    node = parseText(context);
+  }
+
   nodes.push(node);
 
   return nodes;
+}
+
+function parseText(context: any) {
+  // 获取 content
+  const content = parseTextData(context, context.source.length);
+
+  // console.log("-----parseText context.source-----", context.source);
+  return {
+    type: NodeTypes.TEXT,
+    content: content,
+  };
+}
+
+function parseTextData(context: any, length) {
+  const content = context.source.slice(0, length);
+
+  // 清除处理完成的代码 context.source
+  advanceBy(context, length);
+  return content;
 }
 
 function parseElement(context: any) {
   // 解析 tag
   const element = parseTag(context, TagType.Start);
   parseTag(context, TagType.End);
-  console.log("----------------", context.source);
+
+  // console.log("-----parseElement context.source-----", context.source);
   return element;
 }
 
 // 解析 <div></div>
 function parseTag(context: any, type: TagType) {
-  // 匹配 <div | </div
+  // 匹配 <[a-z] | </[a-z]
   const match: any = /^<\/?([a-z]*)/i.exec(context.source);
   const tag = match[1];
-  // 删除处理完成的代码
+  // 清除处理完成的代码 context.source
   advanceBy(context, match[0].length);
   advanceBy(context, 1);
 
@@ -67,12 +92,13 @@ function parseInterpolation(context): any {
   const rawContentLength = closeIndex - openDelimiter.length;
   // 获取 xxx}}
   advanceBy(context, openDelimiter.length);
-  // 获取 xxx
-  const rawContent = context.source.slice(0, rawContentLength);
+  // 获取 xxx 并且清除处理完成的 xxx
+  const rawContent = parseTextData(context, rawContentLength);
   const content = rawContent.trim();
-  // 删除处理完成的 context.source
-  advanceBy(context, rawContentLength + closeDelimiter.length);
+  // 清除处理完成的 context.source = ""
+  advanceBy(context, closeDelimiter.length);
 
+  // console.log("-----parseInterpolation context.source-----", context.source);
   return {
     type: NodeTypes.INTERPOLATION,
     content: {
