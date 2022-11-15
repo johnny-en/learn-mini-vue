@@ -8,36 +8,67 @@ const enum TagType {
 
 export function baseParse(content: string) {
   const context = createParserContext(content);
-  return createRoot(parseChildren(context));
+  return createRoot(parseChildren(context, []));
 }
-
-function parseChildren(context): any {
+/**
+ *
+ * @param ancestors 祖先元素栈
+ * @returns
+ */
+function parseChildren(context, ancestors): any {
   const nodes: any = [];
 
-  let node;
-  const s = context.source;
-  if (s.startsWith("{{")) {
-    node = parseInterpolation(context);
-  } else if (s[0] === "<") {
-    if (/[a-z]/i.test(s[1])) {
-      node = parseElement(context);
+  while (!isEnd(context, ancestors)) {
+    let node;
+    const s = context.source;
+    if (s.startsWith("{{")) {
+      node = parseInterpolation(context);
+    } else if (s[0] === "<") {
+      if (/[a-z]/i.test(s[1])) {
+        node = parseElement(context, ancestors);
+      }
     }
+
+    if (!node) {
+      node = parseText(context);
+    }
+
+    nodes.push(node);
   }
-
-  if (!node) {
-    node = parseText(context);
-  }
-
-  nodes.push(node);
-
   return nodes;
 }
 
-function parseText(context: any) {
-  // 获取 content
-  const content = parseTextData(context, context.source.length);
+function isEnd(context, ancestors) {
+  // 结束标签
+  const s = context.source;
+  if (s.startsWith("</")) {
+    for (let i = ancestors.length - 1; i >= 0; i--) {
+      if (startsWithEndTagOpen(s, ancestors[i].tag)) {
+        return true;
+      }
+    }
+  }
+  // sources 为空时
+  return !context.source;
+}
 
-  // console.log("-----parseText context.source-----", context.source);
+function parseText(context: any) {
+  let endIndex = context.source.length;
+  let endTokens = ["<", "{{"];
+
+  // 查找 source 是否还包含有其他的类型
+  for (let i = 0; i < endTokens.length; i++) {
+    const index = context.source.indexOf(endTokens[i]);
+    // 从左 -> 右处理找到的类型，所以 index < endIndex
+    if (index !== -1 && index < endIndex) {
+      endIndex = index;
+    }
+  }
+
+  // 获取 content
+  const content = parseTextData(context, endIndex);
+
+  // console.log("-----parseText context.source-----", content, context);
   return {
     type: NodeTypes.TEXT,
     content: content,
@@ -52,13 +83,31 @@ function parseTextData(context: any, length) {
   return content;
 }
 
-function parseElement(context: any) {
+function parseElement(context: any, ancestors) {
   // 解析 tag
-  const element = parseTag(context, TagType.Start);
-  parseTag(context, TagType.End);
+  const element: any = parseTag(context, TagType.Start);
+  ancestors.push(element);
+  // 解析 tag 后，source 可能还包含子级，所以，再次调用 parseChildren
+  element.children = parseChildren(context, ancestors);
+  ancestors.pop();
+
+  // console.log("----- clear endTag -----", element.tag, context.source);
+  // 清除结束节点
+  if (startsWithEndTagOpen(context.source, element.tag)) {
+    parseTag(context, TagType.End);
+  } else {
+    throw new Error(`缺少结束标签:${element.tag}`);
+  }
 
   // console.log("-----parseElement context.source-----", context.source);
   return element;
+}
+
+function startsWithEndTagOpen(source: any, tag: any) {
+  return (
+    source.startsWith("</") &&
+    source.slice(2, 2 + tag.length).toLowerCase() === tag.toLowerCase()
+  );
 }
 
 // 解析 <div></div>
@@ -78,7 +127,7 @@ function parseTag(context: any, type: TagType) {
   };
 }
 
-// 解析 {{xxx}} 表达式
+// 解析插值 {{xxx}} 表达式
 function parseInterpolation(context): any {
   const openDelimiter = "{{";
   const closeDelimiter = "}}";
@@ -88,14 +137,14 @@ function parseInterpolation(context): any {
     openDelimiter.length
   );
 
-  // 获取 xxx 的长度
+  // 获取代表式 xxx 的长度
   const rawContentLength = closeIndex - openDelimiter.length;
   // 获取 xxx}}
   advanceBy(context, openDelimiter.length);
   // 获取 xxx 并且清除处理完成的 xxx
   const rawContent = parseTextData(context, rawContentLength);
   const content = rawContent.trim();
-  // 清除处理完成的 context.source = ""
+  // 此时 context.source = "}}" 清除 context.source = ""
   advanceBy(context, closeDelimiter.length);
 
   // console.log("-----parseInterpolation context.source-----", context.source);
