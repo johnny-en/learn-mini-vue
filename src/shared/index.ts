@@ -1,3 +1,5 @@
+export * from "./toDisplayString";
+
 export const extend = Object.assign;
 
 export const EMPTY_OBJ = {};
@@ -9,8 +11,6 @@ export const isString = (value) => typeof value === "string";
 export const hasChange = (value, newValue) => {
   return !Object.is(value, newValue);
 };
-
-export const isOn = (value) => /^on[A-Z]/.test(value);
 
 export const hasOwn = (target, key) =>
   Object.prototype.hasOwnProperty.call(target, key);

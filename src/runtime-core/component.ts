@@ -4,7 +4,12 @@ import { emit } from "./componentEmit";
 import { initProps } from "./componentProps";
 import { publicInstanceProxyHandlers } from "./componentPublicInstance";
 import { initSlots } from "./componentSlots";
-import { currentInstance, setCurrentInstance } from "./variable/component";
+import {
+  compiler,
+  currentInstance,
+  setCompiler,
+  setCurrentInstance,
+} from "./variable/component";
 
 export function createComponentInstance(vnode, parent) {
   const component = {
@@ -69,12 +74,19 @@ function handleSetupResult(instance, setupResult: any) {
 
 function finishComponentSetup(instance: any) {
   const Component = instance.type;
-
-  if (Component.render) {
-    instance.render = Component.render;
+  const compilerFn = compiler();
+  if (compilerFn && !Component.render) {
+    if (Component.template) {
+      Component.render = compilerFn(Component.template);
+    }
   }
+  instance.render = Component.render;
 }
 
 export function getCurrentInstance() {
   return currentInstance();
+}
+
+export function registerRuntimeCompiler(_compiler) {
+  setCompiler(_compiler);
 }

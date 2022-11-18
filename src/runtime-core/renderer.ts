@@ -438,8 +438,10 @@ export function createRenderer(options) {
       () => {
         if (!instance.isMounted) {
           // 组件初始化
+          const { proxy } = instance;
           const subTree = (instance.subTree = instance.render.call(
-            instance.proxy
+            proxy,
+            proxy
           ));
           console.log("init", subTree);
 
@@ -458,7 +460,9 @@ export function createRenderer(options) {
 
             updateComponentPreRender(instance, next);
           }
-          const subTree = instance.render.call(instance.proxy);
+
+          const { proxy } = instance;
+          const subTree = instance.render.call(proxy, proxy);
           const prevSubTree = instance.subTree;
           instance.subTree = subTree;
 

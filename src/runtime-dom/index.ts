@@ -1,11 +1,11 @@
 import { createRenderer } from "../runtime-core";
-import { isOn } from "../shared";
 
 function createElement(type) {
   return document.createElement(type);
 }
 
 function patchProp(el, key, prevValue, nextValue) {
+  const isOn = (value) => /^on[A-Z]/.test(value);
   if (isOn(key)) {
     const event = key.slice(2).toLowerCase();
     el.addEventListener(event, nextValue);
