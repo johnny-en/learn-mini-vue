@@ -18,14 +18,16 @@ function getter(isReadonly = false, isShallow = false) {
       return result;
     }
 
+    if (!isReadonly) {
+      // get 的时候进行依赖收集
+      track(target, key);
+    }
+
     if (isObject(result)) {
+      // 响应式对象内的嵌套对象依然是 proxy 对象
       return isReadonly ? readonly(result) : reactive(result);
     }
 
-    if (!isReadonly) {
-      // 收集依赖
-      track(target, key);
-    }
     return result;
   };
 }
